@@ -8,14 +8,24 @@ public partial class Form1 : Form
     private Cube[] cubes;
     private System.Windows.Forms.Timer timer;
 
-    private float[] cameraPos = new float[] { 5, 30, 100 };
-    private float[] cameraForward = new float[] { 0, 0, 1, 1 };
+    private float[] cameraPos = new float[] { 200, 0, 100 };
+    //private float[] cameraForward = new float[] { 0, 0, 1, 1 };
+    //private float[] cameraUp = new float[] { 0, 1, 0, 1 };
+    //private float[] cameraRight = new float[] { 1, 0, 0, 1 };
+
+    private float[] cameraForward = new float[] { 1, 0, 0, -1 };
     private float[] cameraUp = new float[] { 0, 1, 0, 1 };
-    private float[] cameraRight = new float[] { 1, 0, 0, 1 };
+    private float[] cameraRight = new float[] { 0, 0, -1, 1 };
     private float farPlane = 100;
     private float nearPlane = 0.1f;
     private float fov = (float)(Math.PI / 3);
-    private float moveSpeed = 1;
+    private float moveSpeed = 3;
+    private bool pressedW = false;
+    private bool pressedS = false;
+    private bool pressedA = false;
+    private bool pressedD = false;
+    private bool pressedShift = false;
+    private bool pressedSpace = false;
 
     float pitchAngle = 0.07f;
     float yawAngle = 0.07f;
@@ -31,11 +41,12 @@ public partial class Form1 : Form
 
         cubes =
         [
-            new Cube([-7, 1, 1], 10),
-                new Cube([-2, 15, 15], 10),
-                new Cube([1, 1, 1], 10),
-                new Cube([70, 25, 15], 10),
-                new Cube([110, 30, 20], 10),
+            new Cube([0, 0, 0], 10),
+            new Cube([0, 10, 0], 10),
+            new Cube([0, 20, 0], 10),
+            new Cube([0, 30, 0], 10),
+            new Cube([10, 30, 0], 10),                
+            new Cube([-10, -10, 0], 10),
             ];
 
         timer = new System.Windows.Forms.Timer();
@@ -46,12 +57,16 @@ public partial class Form1 : Form
 
     private void Timer_Tick(object sender, EventArgs e)
     {
+        updatePos();
         foreach (var cube in cubes)
         {
-            cube.RotateX(0);
-            cube.RotateY(0);
-            cube.RotateZ(0);
+            //cube.RotateX(0);
+            //cube.RotateY(0);
+            //cube.RotateZ(0);
         }
+
+        //Console.WriteLine("Camera Pos: " + cameraPos[0] + " " + cameraPos[1] + " " + cameraPos[2]);
+
         Invalidate();
     }
 
@@ -79,6 +94,38 @@ public partial class Form1 : Form
             g.DrawLine(Pens.Black, p1, p2);
         }
     }
+
+    private void updatePos()
+    {
+        if (pressedA)
+            moveRightRelative(true);
+        if (pressedD)
+            moveRightRelative(false);
+        if (pressedS)
+            moveForwardRelative(true);
+        if (pressedW)
+            moveForwardRelative(false);
+        if (pressedShift)
+            moveUpRelative(true);
+        if (pressedSpace)
+            moveUpRelative(false);
+    }
+
+    private void moveRightRelative(bool opposite)
+    {
+        cameraPos = AddArrays(cameraPos, MultiplyArrayWithScalar(cameraRight[0..3], (opposite ? 1 : -1) * moveSpeed));
+    }
+
+    private void moveForwardRelative(bool opposite)
+    {
+        cameraPos = AddArrays(cameraPos, MultiplyArrayWithScalar(cameraForward[0..3], (opposite ? 1 : -1) * moveSpeed));
+    }
+
+    private void moveUpRelative(bool opposite)
+    {
+        cameraPos = AddArrays(cameraPos, MultiplyArrayWithScalar(cameraUp[0..3], (opposite ? 1 : -1) * moveSpeed));
+    }
+
 
     private PointF[] ProjectCube(float[][] points)
     {
@@ -150,36 +197,59 @@ public partial class Form1 : Form
 
     public void RotateCamera(float pitchAngle, float yawAngle, float rollAngle)
     {
-        float[,] Rx = GetRotationMatrixX(pitchAngle);
-        float[,] Ry = GetRotationMatrixY(yawAngle);
-        float[,] Rz = GetRotationMatrixZ(rollAngle);
+        //yaw : left/right
+        cameraForward = RotateAroundAxis(cameraForward, cameraUp, yawAngle); // Rotate forward around the up axis
+        cameraRight = RotateAroundAxis(cameraRight, cameraUp, yawAngle);     // Rotate right around the up axis
+        cameraUp = RotateAroundAxis(cameraUp, cameraUp, yawAngle);           // Rotate up around itself (should not change)
 
-        Console.WriteLine();
-        Console.WriteLine(pitchAngle + " " + yawAngle + " " + rollAngle);
-        Console.WriteLine("Camera F: " + string.Join(", ", cameraForward));
-        cameraForward = MultiplyMatrixAndVector(Rx, cameraForward);
-        for (int i = 0; i < Rx.GetLength(0); i++)
-        {
-            for (int j = 0; j < Rx.GetLength(1); j++)
-            {
-                Console.Write(Rx[i, j] + "\t");
-            }
-            Console.WriteLine();
-        }
-        Console.WriteLine("Camera Right: " + string.Join(", ", cameraForward));
+        //pitch: up/down
+        cameraForward = RotateAroundAxis(cameraForward, cameraRight, pitchAngle); // Rotate forward around the right axis
+        cameraUp = RotateAroundAxis(cameraUp, cameraRight, pitchAngle);           // Rotate up around the right axis
 
-        cameraForward = MultiplyMatrixAndVector(Ry, cameraForward);
-        cameraForward = MultiplyMatrixAndVector(Rz, cameraForward);
+        //roll
+        cameraRight = RotateAroundAxis(cameraRight, cameraForward, rollAngle);   // Rotate right around the forward axis
+        cameraUp = RotateAroundAxis(cameraUp, cameraForward, rollAngle);         // Rotate up around the forward axis
 
-        cameraUp = MultiplyMatrixAndVector(Rx, cameraUp);
-        cameraUp = MultiplyMatrixAndVector(Ry, cameraUp);
-        cameraUp = MultiplyMatrixAndVector(Rz, cameraUp);
-
-        cameraRight = MultiplyMatrixAndVector(Rx, cameraRight);
-        cameraRight = MultiplyMatrixAndVector(Ry, cameraRight);
-        cameraRight = MultiplyMatrixAndVector(Rz, cameraRight);
+        // Print the new camera orientation for debugging
+        Console.WriteLine("Forward: " + string.Join(", ", cameraForward));
+        Console.WriteLine("Up: " + string.Join(", ", cameraUp));
+        Console.WriteLine("Right: " + string.Join(", ", cameraRight));
     }
-    
+
+
+
+    private float[] RotateAroundAxis(float[] v, float[] axis, float angle)
+    {
+        // Normalisiere die Achse (axis muss ein Einheitsvektor sein)
+        float axisLength = (float)Math.Sqrt(axis[0] * axis[0] + axis[1] * axis[1] + axis[2] * axis[2]);
+        float[] normalizedAxis = new float[3] { axis[0] / axisLength, axis[1] / axisLength, axis[2] / axisLength };
+
+        // Kreuzprodukt von axis und v
+        float[] crossProduct = new float[3]
+        {
+        normalizedAxis[1] * v[2] - normalizedAxis[2] * v[1],
+        normalizedAxis[2] * v[0] - normalizedAxis[0] * v[2],
+        normalizedAxis[0] * v[1] - normalizedAxis[1] * v[0]
+        };
+
+        // Skalarprodukt von axis und v
+        float dotProduct = normalizedAxis[0] * v[0] + normalizedAxis[1] * v[1] + normalizedAxis[2] * v[2];
+
+        // Rodrigues' Rotation Formula
+        float cosTheta = (float)Math.Cos(angle);
+        float sinTheta = (float)Math.Sin(angle);
+
+        // Berechne den rotierten Vektor
+        float[] rotatedVector =
+        [
+            v[0] * cosTheta + crossProduct[0] * sinTheta + normalizedAxis[0] * dotProduct * (1 - cosTheta),
+            v[1] * cosTheta + crossProduct[1] * sinTheta + normalizedAxis[1] * dotProduct * (1 - cosTheta),
+            v[2] * cosTheta + crossProduct[2] * sinTheta + normalizedAxis[2] * dotProduct * (1 - cosTheta)
+        ];
+
+        return rotatedVector;
+    }
+
     private float[,] GetRotationMatrixX(float angle)
     {
         float cos = (float)Math.Cos(angle);
@@ -219,7 +289,7 @@ public partial class Form1 : Form
         };
     }
 
-    static float[] MultiplyMatrixAndVector(float[,] matrix, float[] vector)
+    float[] MultiplyMatrixAndVector(float[,] matrix, float[] vector)
     {
         int rows = matrix.GetLength(0);
         int cols = matrix.GetLength(1);
@@ -235,10 +305,43 @@ public partial class Form1 : Form
         return result;
     }
 
-    static float Dot(float[] a, float[] b)
+    float Dot(float[] a, float[] b)
     {
         return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
     }
+
+    float[] AddArrays(float[] array1, float[] array2)
+    {
+        if (array1.Length != array2.Length)
+            throw new ArgumentException("Arrays must have the same length.");
+        float[] result = new float[array1.Length];
+        for (int i = 0; i < array1.Length; i++)
+            result[i] = array1[i] + array2[i];
+
+        return result;
+    }
+
+    float[] MultiplyArrayWithScalar(float[] array, float scalar)
+    {
+        float[] result = new float[array.Length];
+        for (int i = 0; i < array.Length; i++)
+            result[i] = array[i] * scalar;
+        return result;
+    }
+
+    float[] CrossProduct(float[] vectorA, float[] vectorB)
+    {
+        if (vectorA.Length != 3 || vectorB.Length != 3)
+            throw new ArgumentException("Both vectors must be 3-dimensional.");
+        return new float[]
+        {
+            vectorA[1] * vectorB[2] - vectorA[2] * vectorB[1],
+            vectorA[2] * vectorB[0] - vectorA[0] * vectorB[2],
+            vectorA[0] * vectorB[1] - vectorA[1] * vectorB[0]
+        };
+    }
+
+
 
     protected override void OnKeyDown(KeyEventArgs e)
     {
@@ -247,24 +350,22 @@ public partial class Form1 : Form
         switch (e.KeyCode)
         {
             case Keys.W:
-                cameraPos[2] -= moveSpeed;
-                Console.WriteLine("W pressed");
+                pressedW = true;
                 break;
             case Keys.S:
-                cameraPos[2] += moveSpeed;
-                Console.WriteLine("S pressed");
+                pressedS = true;
                 break;
             case Keys.A:
-                cameraPos[0] += moveSpeed;
+                pressedA = true;
                 break;
             case Keys.D:
-                cameraPos[0] -= moveSpeed;
+                pressedD = true;
                 break;
             case Keys.Space:
-                cameraPos[1] -= moveSpeed;
+                pressedSpace = true;
                 break;
             case Keys.ShiftKey:
-                cameraPos[1] += moveSpeed;
+                pressedShift = true;
                 break;
             case Keys.Down:
                 RotateCamera(pitchAngle, 0, 0);
@@ -276,12 +377,38 @@ public partial class Form1 : Form
                 RotateCamera(0, yawAngle, 0);
                 break;
             case Keys.Left:
-                Console.Write("Down pressed");
                 RotateCamera(0, -yawAngle, 0);
                 break;
         }
-
-        this.Invalidate();
     }
+
+
+    protected override void OnKeyUp(KeyEventArgs e)
+    {
+        base.OnKeyUp(e);
+
+        switch (e.KeyCode)
+        {
+            case Keys.W:
+                pressedW = false;
+                break;
+            case Keys.S:
+                pressedS = false;
+                break;
+            case Keys.A:
+                pressedA = false;
+                break;
+            case Keys.D:
+                pressedD = false;
+                break;
+            case Keys.Space:
+                pressedSpace = false;
+                break;
+            case Keys.ShiftKey:
+                pressedShift = false;
+                break;
+        }
+    }
+
 }
 
