@@ -5,10 +5,10 @@ public partial class Form1 : Form
     [System.Runtime.InteropServices.DllImport("kernel32.dll")]
     public static extern bool AllocConsole();
 
-    private Cube[] cubes;
+    private List<Cube> cubes;
     private System.Windows.Forms.Timer timer;
 
-    private float[] cameraPos = new float[] { 200, 0, 100 };
+    private float[] cameraPos = new float[] { 20, 30, 0 };
     //private float[] cameraForward = new float[] { 0, 0, 1, 1 };
     //private float[] cameraUp = new float[] { 0, 1, 0, 1 };
     //private float[] cameraRight = new float[] { 1, 0, 0, 1 };
@@ -39,15 +39,19 @@ public partial class Form1 : Form
 
         AllocConsole();
 
-        cubes =
-        [
-            new Cube([0, 0, 0], 10),
-            new Cube([0, 10, 0], 10),
-            new Cube([0, 20, 0], 10),
-            new Cube([0, 30, 0], 10),
-            new Cube([10, 30, 0], 10),                
-            new Cube([-10, -10, 0], 10),
-            ];
+        cubes = new List<Cube>
+        {
+            new Cube(new float[] { 0, 10, 0 }, 10),
+            new Cube(new float[] { 0, 0, 0 }, 10),
+            new Cube(new float[] { 0, 20, 0 }, 10),
+            new Cube(new float[] { 0, 30, 0 }, 10),
+            new Cube(new float[] { 10, 30, 0 }, 10),
+            new Cube(new float[] { -10, -10, 0 }, 10),
+        };
+
+        for (int i = 0; i < 99; i++)
+            for (int j = 0; j < 99; j++);
+                //cubes.Add(new Cube(new float[] { i * 10, 0, j * 10 }, 10)); // Cube zur Liste hinzufügen
 
         timer = new System.Windows.Forms.Timer();
         timer.Interval = 20;
