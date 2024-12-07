@@ -1,0 +1,14 @@
+C:\Users\Konrad\Documents\Informatik\vsCodeCS\game3D\bin\Debug\net8.0-windows\game3D.exe
+C:\Users\Konrad\Documents\Informatik\vsCodeCS\game3D\bin\Debug\net8.0-windows\game3D.deps.json
+C:\Users\Konrad\Documents\Informatik\vsCodeCS\game3D\bin\Debug\net8.0-windows\game3D.runtimeconfig.json
+C:\Users\Konrad\Documents\Informatik\vsCodeCS\game3D\bin\Debug\net8.0-windows\game3D.dll
+C:\Users\Konrad\Documents\Informatik\vsCodeCS\game3D\bin\Debug\net8.0-windows\game3D.pdb
+C:\Users\Konrad\Documents\Informatik\vsCodeCS\game3D\obj\Debug\net8.0-windows\game3D.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Konrad\Documents\Informatik\vsCodeCS\game3D\obj\Debug\net8.0-windows\game3D.AssemblyInfoInputs.cache
+C:\Users\Konrad\Documents\Informatik\vsCodeCS\game3D\obj\Debug\net8.0-windows\game3D.AssemblyInfo.cs
+C:\Users\Konrad\Documents\Informatik\vsCodeCS\game3D\obj\Debug\net8.0-windows\game3D.csproj.CoreCompileInputs.cache
+C:\Users\Konrad\Documents\Informatik\vsCodeCS\game3D\obj\Debug\net8.0-windows\game3D.dll
+C:\Users\Konrad\Documents\Informatik\vsCodeCS\game3D\obj\Debug\net8.0-windows\refint\game3D.dll
+C:\Users\Konrad\Documents\Informatik\vsCodeCS\game3D\obj\Debug\net8.0-windows\game3D.pdb
+C:\Users\Konrad\Documents\Informatik\vsCodeCS\game3D\obj\Debug\net8.0-windows\game3D.genruntimeconfig.cache
+C:\Users\Konrad\Documents\Informatik\vsCodeCS\game3D\obj\Debug\net8.0-windows\ref\game3D.dll
