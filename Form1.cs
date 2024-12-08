@@ -8,16 +8,12 @@ public partial class Form1 : Form
     private List<Cube> cubes;
     private System.Windows.Forms.Timer timer;
 
-    private float[] cameraPos = new float[] { 20, 30, 0 };
-    //private float[] cameraForward = new float[] { 0, 0, 1, 1 };
-    //private float[] cameraUp = new float[] { 0, 1, 0, 1 };
-    //private float[] cameraRight = new float[] { 1, 0, 0, 1 };
-
-    private float[] cameraForward = new float[] { 1, 0, 0, -1 };
+    private float[] cameraPos = new float[] { 20, 30, 30 };
+    private float[] cameraForward = new float[] { 1, 0, 0, 1 };
     private float[] cameraUp = new float[] { 0, 1, 0, 1 };
     private float[] cameraRight = new float[] { 0, 0, -1, 1 };
     private float farPlane = 100;
-    private float nearPlane = 0.1f;
+    private float nearPlane = 1;
     private float fov = (float)(Math.PI / 3);
     private float moveSpeed = 3;
     private bool pressedW = false;
@@ -31,6 +27,10 @@ public partial class Form1 : Form
     float yawAngle = 0.07f;
     float rollAngle = 0.07f;
 
+    private float mouseSensitivity = 0.001f;
+
+    private bool noCursor = false;
+
     public Form1()
     {
         InitializeComponent();
@@ -38,21 +38,24 @@ public partial class Form1 : Form
         this.KeyPreview = true;
 
         AllocConsole();
+        InitializeDebugPanel();
 
         cubes = new List<Cube>
         {
-            new Cube(new float[] { 0, 10, 0 }, 10),
-            new Cube(new float[] { 0, 0, 0 }, 10),
-            new Cube(new float[] { 0, 20, 0 }, 10),
-            new Cube(new float[] { 0, 30, 0 }, 10),
-            new Cube(new float[] { 10, 30, 0 }, 10),
+            //new Cube(new float[] { 0, 10, 0 }, 10),
+            //new Cube(new float[] { 0, 0, 0 }, 10),
+            //new Cube(new float[] { 0, 20, 0 }, 10),
+            //new Cube(new float[] { 0, 30, 0 }, 10),
+            //new Cube(new float[] { 10, 30, 0 }, 10),
             new Cube(new float[] { -10, -10, 0 }, 10),
         };
 
-        for (int i = 0; i < 99; i++)
-            for (int j = 0; j < 99; j++);
-                //cubes.Add(new Cube(new float[] { i * 10, 0, j * 10 }, 10)); // Cube zur Liste hinzufügen
-
+        for (int i = 0; i < 9; i++)
+            for (int j = 0; j < 9; j++)
+            {
+                //cubes.Add(new Cube(new float[] { i * 10, 0, j * 10 }, 10));
+                //cubes.Add(new Cube(new float[] { i * 10, 10, j * 10 }, 10));
+            }
         timer = new System.Windows.Forms.Timer();
         timer.Interval = 20;
         timer.Tick += Timer_Tick;
@@ -62,16 +65,12 @@ public partial class Form1 : Form
     private void Timer_Tick(object sender, EventArgs e)
     {
         updatePos();
-        foreach (var cube in cubes)
-        {
-            //cube.RotateX(0);
-            //cube.RotateY(0);
-            //cube.RotateZ(0);
-        }
-
-        //Console.WriteLine("Camera Pos: " + cameraPos[0] + " " + cameraPos[1] + " " + cameraPos[2]);
-
         Invalidate();
+    }
+
+    protected override void OnLoad(EventArgs e)
+    {
+        base.OnLoad(e);
     }
 
     protected override void OnPaint(PaintEventArgs e)
@@ -90,13 +89,21 @@ public partial class Form1 : Form
     private void DrawCube(Graphics g, Cube cube)
     {
         PointF[] cube2D = ProjectCube(cube.Points);
+        Console.WriteLine();
+        foreach (var p in cube2D)
+            Console.WriteLine(p.X + " " + p.Y);
 
         foreach (var edge in cube.Edges)
         {
             PointF p1 = cube2D[edge[0]];
             PointF p2 = cube2D[edge[1]];
+            bool p1OutsideView = p1.X < 0 || p1.X > this.ClientSize.Width || p1.Y < 0 || p1.Y > this.ClientSize.Height;
+            bool p2OutsideView = p2.X < 0 || p2.X > this.ClientSize.Width || p2.Y < 0 || p2.Y > this.ClientSize.Height;
+            if (p1OutsideView || p2OutsideView) ;
+            //continue;
             g.DrawLine(Pens.Black, p1, p2);
         }
+        Console.WriteLine("pos" + string.Join(",", cameraPos));
     }
 
     private void updatePos()
@@ -110,24 +117,29 @@ public partial class Form1 : Form
         if (pressedW)
             moveForwardRelative(false);
         if (pressedShift)
-            moveUpRelative(true);
+            moveUpAbsolute(true);
         if (pressedSpace)
-            moveUpRelative(false);
+            moveUpAbsolute(false);
     }
 
     private void moveRightRelative(bool opposite)
     {
-        cameraPos = AddArrays(cameraPos, MultiplyArrayWithScalar(cameraRight[0..3], (opposite ? 1 : -1) * moveSpeed));
+        cameraPos = AddArrays(cameraPos, MultiplyArrayWithScalar(NormalizeVector([cameraRight[0], 0, cameraRight[2]]), (opposite ? 1 : -1) * moveSpeed));
     }
 
     private void moveForwardRelative(bool opposite)
     {
-        cameraPos = AddArrays(cameraPos, MultiplyArrayWithScalar(cameraForward[0..3], (opposite ? 1 : -1) * moveSpeed));
+        cameraPos = AddArrays(cameraPos, MultiplyArrayWithScalar(NormalizeVector([cameraForward[0], 0, cameraForward[2]]), (opposite ? 1 : -1) * moveSpeed));
     }
 
     private void moveUpRelative(bool opposite)
     {
-        cameraPos = AddArrays(cameraPos, MultiplyArrayWithScalar(cameraUp[0..3], (opposite ? 1 : -1) * moveSpeed));
+        cameraPos = AddArrays(cameraPos, MultiplyArrayWithScalar(NormalizeVector([cameraUp[0], 0, cameraUp[2]]), (opposite ? 1 : -1) * moveSpeed));
+    }
+
+    private void moveUpAbsolute(bool opposite)
+    {
+        cameraPos = AddArrays(cameraPos, MultiplyArrayWithScalar([0, 1, 0], (opposite ? 1 : -1) * moveSpeed));
     }
 
 
@@ -202,9 +214,9 @@ public partial class Form1 : Form
     public void RotateCamera(float pitchAngle, float yawAngle, float rollAngle)
     {
         //yaw : left/right
-        cameraForward = RotateAroundAxis(cameraForward, cameraUp, yawAngle); // Rotate forward around the up axis
-        cameraRight = RotateAroundAxis(cameraRight, cameraUp, yawAngle);     // Rotate right around the up axis
-        cameraUp = RotateAroundAxis(cameraUp, cameraUp, yawAngle);           // Rotate up around itself (should not change)
+        cameraForward = RotateAroundAxis(cameraForward, [0, 1, 0], yawAngle); // Rotate forward around the up axis
+        cameraRight = RotateAroundAxis(cameraRight, [0, 1, 0], yawAngle);     // Rotate right around the up axis
+        cameraUp = RotateAroundAxis(cameraUp, [0, 1, 0], yawAngle);
 
         //pitch: up/down
         cameraForward = RotateAroundAxis(cameraForward, cameraRight, pitchAngle); // Rotate forward around the right axis
@@ -252,45 +264,6 @@ public partial class Form1 : Form
         ];
 
         return rotatedVector;
-    }
-
-    private float[,] GetRotationMatrixX(float angle)
-    {
-        float cos = (float)Math.Cos(angle);
-        float sin = (float)Math.Sin(angle);
-
-        return new float[,] {
-            { 1, 0, 0, 0 },
-            { 0, cos, -sin, 0 },
-            { 0, sin, cos, 0 },
-            { 0, 0, 0, 1 }
-        };
-    }
-
-    private float[,] GetRotationMatrixY(float angle)
-    {
-        float cos = (float)Math.Cos(angle);
-        float sin = (float)Math.Sin(angle);
-
-        return new float[,] {
-            { cos, 0, sin, 0 },
-            { 0, 1, 0, 0 },
-            { -sin, 0, cos, 0 },
-            { 0, 0, 0, 1 }
-        };
-    }
-
-    private float[,] GetRotationMatrixZ(float angle)
-    {
-        float cos = (float)Math.Cos(angle);
-        float sin = (float)Math.Sin(angle);
-
-        return new float[,] {
-            { cos, -sin, 0, 0 },
-            { sin, cos, 0, 0 },
-            { 0, 0, 1, 0 },
-            { 0, 0, 0, 1 }
-        };
     }
 
     float[] MultiplyMatrixAndVector(float[,] matrix, float[] vector)
@@ -345,6 +318,179 @@ public partial class Form1 : Form
         };
     }
 
+    float[] NormalizeVector(float[] vector)
+    {
+        float length = (float)Math.Sqrt(vector.Sum(v => v * v));
+        if (length == 0)
+            throw new ArgumentException("The vector has zero length and cannot be normalized.");
+        return vector.Select(v => v / length).ToArray();
+    }
+
+    private void InitializeDebugPanel()
+    {
+        Panel debugPanel = new Panel
+        {
+            Dock = DockStyle.Right,
+            Width = 220,
+            BackColor = Color.LightGray,
+            AutoScroll = true // Enable scrolling for many controls
+        };
+
+        int controlY = 10; // Y position for placing controls
+
+        // Dictionary to store references to the TextBox controls
+        var controlReferences = new Dictionary<string, TextBox>();
+
+        // Helper function to add a label and TextBox control
+        void AddTextControl(string labelText, float variable, Action<float> setter, string key)
+        {
+            Label label = new Label
+            {
+                Text = labelText,
+                Location = new Point(10, controlY),
+                AutoSize = true
+            };
+
+            TextBox control = new TextBox
+            {
+                Text = variable.ToString(),
+                Location = new Point(10, controlY + 20),
+                Width = 100
+            };
+            control.TextChanged += (sender, e) =>
+            {
+                if (float.TryParse(control.Text, out float value))
+                {
+                    setter(value); // Update the variable if the value is valid
+                }
+            };
+
+            controlReferences[key] = control; // Store the control reference for later updates
+
+            debugPanel.Controls.Add(label);
+            debugPanel.Controls.Add(control);
+            controlY += 50; // Increment Y for the next control
+        }
+
+        // Helper function to add a label with non-editable text
+        void AddTextLabel(string labelText, string value, string key)
+        {
+            Label label = new Label
+            {
+                Text = labelText + value,
+                Location = new Point(10, controlY),
+                AutoSize = true
+            };
+
+            // Store the label reference for later updates
+            controlReferences[key] = new TextBox
+            {
+                Text = value,
+                Location = new Point(10, controlY + 20),
+                Width = 100,
+                ReadOnly = true
+            };
+
+            debugPanel.Controls.Add(label);
+            debugPanel.Controls.Add(controlReferences[key]);
+            controlY += 50; // Increment Y for the next control
+        }
+
+        // Add controls for each variable
+        AddTextControl("Move Speed", moveSpeed, value => moveSpeed = value, nameof(moveSpeed));
+        AddTextControl("Far Plane", farPlane, value => farPlane = value, nameof(farPlane));
+        AddTextControl("Near Plane", nearPlane, value => nearPlane = value, nameof(nearPlane));
+        AddTextControl("FOV", fov, value => fov = value, nameof(fov));
+        AddTextControl("Mouse Sensitivity", mouseSensitivity, value => mouseSensitivity = value, nameof(mouseSensitivity));
+
+        // Add controls for camera position
+        for (int i = 0; i < cameraPos.Length; i++)
+        {
+            string axis = i == 0 ? "X" : i == 1 ? "Y" : "Z";
+            int index = i; // Capture the loop variable for use in lambda
+            AddTextControl($"Camera Pos {axis}", cameraPos[i], value => cameraPos[index] = value, $"cameraPos{index}");
+        }
+
+        // Add controls for angles
+        AddTextControl("Pitch Angle", pitchAngle, value => pitchAngle = value, nameof(pitchAngle));
+        AddTextControl("Yaw Angle", yawAngle, value => yawAngle = value, nameof(yawAngle));
+        AddTextControl("Roll Angle", rollAngle, value => rollAngle = value, nameof(rollAngle));
+
+        // Add non-editable text labels for camera vectors
+        AddTextLabel("Camera Forward: ", string.Join(", ", cameraForward), nameof(cameraForward));
+        AddTextLabel("Camera Up: ", string.Join(", ", cameraUp), nameof(cameraUp));
+        AddTextLabel("Camera Right: ", string.Join(", ", cameraRight), nameof(cameraRight));
+
+        // Add the debug panel to the form
+        this.Controls.Add(debugPanel);
+
+        // Unfocus logic to deselect controls when clicking outside
+        this.Click += (sender, e) => Unfocus();
+        debugPanel.Click += (sender, e) => { }; // Prevent unfocus when clicking inside the panel
+        foreach (Control control in debugPanel.Controls)
+            control.Click += (sender, e) => { };
+
+        // Timer to refresh control values
+        System.Windows.Forms.Timer refreshTimer = new System.Windows.Forms.Timer { Interval = 100 }; // Refresh every 100ms
+        refreshTimer.Tick += (sender, e) =>
+        {
+            // Update values for editable controls
+            UpdateControlValue(nameof(moveSpeed), moveSpeed);
+            UpdateControlValue(nameof(farPlane), farPlane);
+            UpdateControlValue(nameof(nearPlane), nearPlane);
+            UpdateControlValue(nameof(fov), fov);
+            UpdateControlValue(nameof(mouseSensitivity), mouseSensitivity);
+
+            // Update camera position values
+            for (int i = 0; i < cameraPos.Length; i++)
+            {
+                UpdateControlValue($"cameraPos{i}", cameraPos[i]);
+            }
+
+            // Update angle values
+            UpdateControlValue(nameof(pitchAngle), pitchAngle);
+            UpdateControlValue(nameof(yawAngle), yawAngle);
+            UpdateControlValue(nameof(rollAngle), rollAngle);
+
+            // Update non-editable camera vectors
+            UpdateTextLabel(nameof(cameraForward), string.Join(", ", cameraForward));
+            UpdateTextLabel(nameof(cameraUp), string.Join(", ", cameraUp));
+            UpdateTextLabel(nameof(cameraRight), string.Join(", ", cameraRight));
+        };
+        refreshTimer.Start();
+
+        // Helper to update control values dynamically
+        void UpdateControlValue(string key, float value)
+        {
+            if (controlReferences.TryGetValue(key, out var control) && control is TextBox textBox)
+            {
+                string newValue = value.ToString("G"); // Convert to string without rounding
+                if (textBox.Text != newValue) // Avoid unnecessary updates
+                {
+                    textBox.Text = newValue;
+                }
+            }
+        }
+
+        // Helper to update non-editable text labels
+        void UpdateTextLabel(string key, string value)
+        {
+            if (controlReferences.TryGetValue(key, out var control) && control is TextBox textBox)
+            {
+                string newValue = value;
+                if (textBox.Text != newValue) // Avoid unnecessary updates
+                {
+                    textBox.Text = newValue;
+                }
+            }
+        }
+    }
+
+
+    private void Unfocus()
+    {
+        this.ActiveControl = null;
+    }
 
 
     protected override void OnKeyDown(KeyEventArgs e)
@@ -383,9 +529,20 @@ public partial class Form1 : Form
             case Keys.Left:
                 RotateCamera(0, -yawAngle, 0);
                 break;
+            case Keys.Escape:
+                if (noCursor)
+                {
+                    Cursor.Show();
+                }
+                else
+                {
+                    Cursor.Hide();
+                    CenterMouse();
+                }
+                noCursor = !noCursor;
+                break;
         }
     }
-
 
     protected override void OnKeyUp(KeyEventArgs e)
     {
@@ -411,6 +568,31 @@ public partial class Form1 : Form
             case Keys.ShiftKey:
                 pressedShift = false;
                 break;
+        }
+    }
+
+    private void CenterMouse()
+    {
+        Cursor.Position = PointToScreen(new Point(ClientSize.Width / 2, ClientSize.Height / 2));
+    }
+
+    protected override void OnMouseMove(MouseEventArgs e)
+    {
+        if (!noCursor)
+            return;
+        base.OnMouseMove(e);
+
+        Point centerScreen = new Point(ClientSize.Width / 2, ClientSize.Height / 2);
+        Point mousePos = PointToClient(Cursor.Position);
+
+        if (mousePos != centerScreen)
+        {
+            int deltaX = mousePos.X - centerScreen.X;
+            int deltaY = mousePos.Y - centerScreen.Y;
+            float yaw = deltaX * mouseSensitivity;
+            float pitch = deltaY * mouseSensitivity;
+            RotateCamera(pitch, yaw, 0);
+            CenterMouse();
         }
     }
 
