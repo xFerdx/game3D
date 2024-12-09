@@ -6,6 +6,7 @@ class Cube
     public float Size { get; private set; }
     public float[][] Points { get; private set; }
     public int[][] Edges { get; private set; }
+    public int[][] Faces { get; private set; }
 
     public Cube(float[] middlePoint, float size)
     {
@@ -13,6 +14,7 @@ class Cube
         Size = size;
         CreatePoints();
         CreateEdges();
+        CreateFaces();
     }
 
     private void CreatePoints()
@@ -76,6 +78,17 @@ class Cube
         Edges[9] = [1, 5];
         Edges[10] = [2, 6];
         Edges[11] = [3, 7];
+    }
+
+    private void CreateFaces()
+    {
+        Faces = new int[6][];
+        Faces[0] = [0, 1, 2, 3]; // Vorderseite
+        Faces[1] = [4, 5, 6, 7]; // Rückseite
+        Faces[2] = [0, 1, 5, 4]; // Unterseite
+        Faces[3] = [2, 3, 7, 6]; // Oberseite
+        Faces[4] = [0, 3, 7, 4]; // Linke Seite
+        Faces[5] = [1, 2, 6, 5]; // Rechte Seite
     }
 
     public void RotateX(float angle)
