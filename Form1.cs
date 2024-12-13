@@ -45,7 +45,7 @@ public partial class Form1 : Form
         for (int i = 0; i < 19; i++)
             for (int j = 0; j < 19; j++)
                 for (int k = 0; k < 2; k++)
-                    //cubes.Add(new Cube([i * 10, -10 * k, j * 10], 10));
+                    cubes.Add(new Cube([i * 10, -10 * k, j * 10], 10));
         timer = new System.Windows.Forms.Timer();
         timer.Interval = 1;
         timer.Tick += Timer_Tick;
@@ -87,8 +87,77 @@ public partial class Form1 : Form
         Graphics g = e.Graphics;
         g.Clear(Color.White);
 
-        foreach (var cube in cubes)
-            DrawCube(g, cube);
+
+        List<(int cubeIndex, int faceIndex, float zValue)> visibleFaces = new();
+
+        float[][] zValues = new float[cubes.Count][];
+        PointF?[][] points = new PointF?[cubes.Count][];
+
+        for (int i = 0; i < cubes.Count; i++)
+        {
+            (points[i], zValues[i]) = Projection.ProjectCube(cubes[i].Points, cam, this.ClientSize.Width, this.ClientSize.Height);
+        }
+
+        for (int i = 0; i < cubes.Count; i++)
+        {
+            for (int j = 0; j < 6; j++)
+            {
+                float zValue = 0;
+                for (int k = 0; k < 4; k++)
+                {
+                    zValue += zValues[i][cubes[i].Faces[j][k]];
+                }
+                zValue /= 4;
+                visibleFaces.Add((i, j, zValue));
+            }
+        }
+
+        visibleFaces.Sort((a, b) =>
+            {
+
+                return a.zValue.CompareTo(b.zValue);
+            }
+        );
+
+        //visibleFaces = visibleFaces.DistinctBy(f => f.zValue).ToList();
+
+        foreach ((int cubeIndex, int faceIndex, float zValue) in visibleFaces)
+        {
+            PointF?[] facePoints = cubes[cubeIndex].Faces[faceIndex].Select(index => points[cubeIndex][index]).ToArray();
+
+            bool invalid = false;
+            foreach (PointF? p in facePoints)
+            {
+                if (!p.HasValue || !float.IsFinite(p.Value.X) || !float.IsFinite(p.Value.Y) || p.Value.X < -100000 || p.Value.X > 100000 || p.Value.Y < -100000 || p.Value.Y > 100000)
+                {
+                    invalid = true;
+                    break;
+                }
+            }
+            if (invalid)
+                continue;
+
+            Brush b = faceIndex switch
+            {
+                0 => Brushes.Green,
+                1 => Brushes.Blue,
+                2 => Brushes.Red,
+                3 => Brushes.Yellow,
+                4 => Brushes.Orange,
+                5 => Brushes.Pink,
+                _ => Brushes.Gray,
+            };
+
+            g.FillPolygon(b, facePoints.Select(p => p.Value).ToArray());
+
+            g.DrawLine(Pens.Black, facePoints[0].Value, facePoints[1].Value);
+            g.DrawLine(Pens.Black, facePoints[1].Value, facePoints[2].Value);
+            g.DrawLine(Pens.Black, facePoints[2].Value, facePoints[3].Value);
+            g.DrawLine(Pens.Black, facePoints[3].Value, facePoints[0].Value);
+        }
+
+
+        //draw rest
 
         g.DrawLine(Pens.Black, new PointF(this.ClientSize.Width / 2, this.ClientSize.Height / 2 - 20), new PointF(this.ClientSize.Width / 2, this.ClientSize.Height / 2 + 20));
         g.DrawLine(Pens.Black, new PointF(this.ClientSize.Width / 2 - 20, this.ClientSize.Height / 2), new PointF(this.ClientSize.Width / 2 + 20, this.ClientSize.Height / 2));
@@ -108,6 +177,7 @@ public partial class Form1 : Form
 
     }
 
+    /*
     private void DrawCube(Graphics g, Cube cube)
     {
         PointF?[] cube2D = Projection.ProjectCube(cube.Points, cam, this.ClientSize.Width, this.ClientSize.Height);
@@ -147,6 +217,7 @@ public partial class Form1 : Form
             g.DrawLine(Pens.Black, p1, p2);
         }
     }
+    */
 
     private void updatePos()
     {
