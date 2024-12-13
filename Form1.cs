@@ -15,10 +15,10 @@ public partial class Form1 : Form
     private bool pressedD = false;
     private bool pressedShift = false;
     private bool pressedSpace = false;
-    float pitchAngle = 0.07f;
-    float yawAngle = 0.07f;
-    float rollAngle = 0.07f;
-    private float mouseSensitivity = 0.001f;
+    double pitchAngle = 0.07f;
+    double yawAngle = 0.07f;
+    double rollAngle = 0.07f;
+    private double mouseSensitivity = 0.001f;
 
     private bool noCursor = false;
 
@@ -35,16 +35,13 @@ public partial class Form1 : Form
 
         cubes = new List<Cube>
         {
-            new([0, 10, 0], 10),
-            //new([0, 0, 0], 10),
-            //new([0, 20, 0], 10),
-            //new([0, 30, 0], 10),
+            
             //new([10, 30, 0], 10),
         };
 
-        for (int i = 0; i < 19; i++)
-            for (int j = 0; j < 19; j++)
-                for (int k = 0; k < 2; k++)
+        for (int i = 0; i < 20; i++)
+            for (int j = 0; j < 20; j++)
+                for (int k = 0; k < 20; k++)
                     cubes.Add(new Cube([i * 10, -10 * k, j * 10], 10));
         timer = new System.Windows.Forms.Timer();
         timer.Interval = 1;
@@ -80,6 +77,8 @@ public partial class Form1 : Form
         base.OnLoad(e);
     }
 
+
+    int count = 0;
     protected override void OnPaint(PaintEventArgs e)
     {
         base.OnPaint(e);
@@ -88,9 +87,9 @@ public partial class Form1 : Form
         g.Clear(Color.White);
 
 
-        List<(int cubeIndex, int faceIndex, float zValue)> visibleFaces = new();
+        List<(int cubeIndex, int faceIndex, double zValue)> visibleFaces = new();
 
-        float[][] zValues = new float[cubes.Count][];
+        double[][] zValues = new double[cubes.Count][];
         PointF?[][] points = new PointF?[cubes.Count][];
 
         for (int i = 0; i < cubes.Count; i++)
@@ -102,7 +101,7 @@ public partial class Form1 : Form
         {
             for (int j = 0; j < 6; j++)
             {
-                float zValue = 0;
+                double zValue = 0;
                 for (int k = 0; k < 4; k++)
                 {
                     zValue += zValues[i][cubes[i].Faces[j][k]];
@@ -112,23 +111,43 @@ public partial class Form1 : Form
             }
         }
 
-        visibleFaces.Sort((a, b) =>
-            {
+        
 
-                return a.zValue.CompareTo(b.zValue);
-            }
-        );
+        visibleFaces.Sort((a, b) => a.zValue.CompareTo(b.zValue));
 
-        //visibleFaces = visibleFaces.DistinctBy(f => f.zValue).ToList();
+        if(count % 100 == 0)
+        {
+            Console.WriteLine();
+            //foreach ((int _, int _, double z) in visibleFaces)
+            //{
+            //    Console.WriteLine(z);
+            //}
+            Console.WriteLine(visibleFaces.Count);
+        }
 
-        foreach ((int cubeIndex, int faceIndex, float zValue) in visibleFaces)
+
+        visibleFaces = visibleFaces.GroupBy(f => f.zValue).Where(g => g.Count() == 1).Select(g => g.First()).ToList();
+        
+        if(count % 100 == 0)
+        {
+            Console.WriteLine();
+            //foreach ((int _, int _, double z) in visibleFaces)
+            //{
+            //    Console.WriteLine(z);
+            //}
+            Console.WriteLine(visibleFaces.Count);
+
+        }
+
+
+        foreach ((int cubeIndex, int faceIndex, double zValue) in visibleFaces)
         {
             PointF?[] facePoints = cubes[cubeIndex].Faces[faceIndex].Select(index => points[cubeIndex][index]).ToArray();
 
             bool invalid = false;
             foreach (PointF? p in facePoints)
             {
-                if (!p.HasValue || !float.IsFinite(p.Value.X) || !float.IsFinite(p.Value.Y) || p.Value.X < -100000 || p.Value.X > 100000 || p.Value.Y < -100000 || p.Value.Y > 100000)
+                if (!p.HasValue || !double.IsFinite(p.Value.X) || !double.IsFinite(p.Value.Y) || p.Value.X < -100000 || p.Value.X > 100000 || p.Value.Y < -100000 || p.Value.Y > 100000)
                 {
                     invalid = true;
                     break;
@@ -175,6 +194,9 @@ public partial class Form1 : Form
         g.DrawString(cameraUpText, font, brush, x, y + lineHeight);
         g.DrawString(cameraRightText, font, brush, x, y + 2 * lineHeight);
 
+
+
+        count++;
     }
 
     /*
@@ -210,7 +232,7 @@ public partial class Form1 : Form
             bool p2OutsideView = p2.X < 0 || p2.X > this.ClientSize.Width || p2.Y < 0 || p2.Y > this.ClientSize.Height;
             //if (p1OutsideView && p2OutsideView) 
             //Console.WriteLine(p1.X+" "+p1.Y+" "+p2.X+" "+p2.Y);
-            if (!float.IsFinite(p1.X) || !float.IsFinite(p1.Y) || !float.IsFinite(p2.X) || !float.IsFinite(p2.Y))
+            if (!double.IsFinite(p1.X) || !double.IsFinite(p1.Y) || !double.IsFinite(p2.X) || !double.IsFinite(p2.Y))
                 continue;
             if (p1.X < -100000 || p1.X > 100000 || p1.Y < -100000 || p1.Y > 100000 || p2.X < -100000 || p2.X > 100000 || p2.Y < -100000 || p2.Y > 100000)
                 continue;
@@ -241,18 +263,18 @@ public partial class Form1 : Form
         int controlY = 10;
         var controlReferences = new Dictionary<string, TextBox>();
 
-        void AddTextControl(string labelText, float variable, Action<float> setter, string key)
+        void AddTextControl(string labelText, double variable, Action<double> setter, string key)
         {
             Label label = new Label { Text = labelText, Location = new Point(10, controlY), AutoSize = true };
             TextBox control = new TextBox { Text = variable.ToString(), Location = new Point(10, controlY + 20), Width = 100 };
-            control.TextChanged += (sender, e) => { if (float.TryParse(control.Text, out float value)) setter(value); };
+            control.TextChanged += (sender, e) => { if (double.TryParse(control.Text, out double value)) setter(value); };
             controlReferences[key] = control;
             debugPanel.Controls.Add(label);
             debugPanel.Controls.Add(control);
             controlY += 50;
         }
 
-        void UpdateControlValue(string key, float value)
+        void UpdateControlValue(string key, double value)
         {
             if (controlReferences.TryGetValue(key, out var control) && control is TextBox textBox)
                 textBox.Text = value.ToString("G");
@@ -394,8 +416,8 @@ public partial class Form1 : Form
         {
             int deltaX = mousePos.X - centerScreen.X;
             int deltaY = mousePos.Y - centerScreen.Y;
-            float yaw = -deltaX * mouseSensitivity;
-            float pitch = deltaY * mouseSensitivity;
+            double yaw = -deltaX * mouseSensitivity;
+            double pitch = deltaY * mouseSensitivity;
             cam.RotateCamera(pitch, yaw, 0);
             CenterMouse();
         }

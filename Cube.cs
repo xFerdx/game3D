@@ -2,13 +2,13 @@ namespace game3D;
 
 class Cube
 {
-    public float[] MiddlePoint { get; private set; }
-    public float Size { get; private set; }
-    public float[][] Points { get; private set; }
+    public double[] MiddlePoint { get; private set; }
+    public double Size { get; private set; }
+    public double[][] Points { get; private set; }
     public int[][] Edges { get; private set; }
     public int[][] Faces { get; private set; }
 
-    public Cube(float[] middlePoint, float size)
+    public Cube(double[] middlePoint, double size)
     {
         MiddlePoint = middlePoint;
         Size = size;
@@ -19,8 +19,8 @@ class Cube
 
     private void CreatePoints()
     {
-        Points = new float[8][];
-        float halfSize = Size / 2;
+        Points = new double[8][];
+        double halfSize = Size / 2;
         Points[0] = [
             MiddlePoint[0] - halfSize,
             MiddlePoint[1] - halfSize,
@@ -91,23 +91,23 @@ class Cube
         Faces[5] = [1, 2, 6, 5]; // Rechte Seite
     }
 
-    public void RotateX(float angle)
+    public void RotateX(double angle)
     {
-        float cosA = (float)Math.Cos(angle);
-        float sinA = (float)Math.Sin(angle);
+        double cosA = (double)Math.Cos(angle);
+        double sinA = (double)Math.Sin(angle);
 
         for (int i = 0; i < Points.Length; i++)
         {
-            float y = Points[i][1];
-            float z = Points[i][2];
+            double y = Points[i][1];
+            double z = Points[i][2];
 
             // Verschiebe den Punkt relativ zum Mittelpunkt
             y -= MiddlePoint[1];
             z -= MiddlePoint[2];
 
             // Rotieren um die X-Achse
-            float newY = y * cosA - z * sinA;
-            float newZ = y * sinA + z * cosA;
+            double newY = y * cosA - z * sinA;
+            double newZ = y * sinA + z * cosA;
 
             // Verschiebe den Punkt zurück zum ursprünglichen Mittelpunkt
             Points[i][1] = newY + MiddlePoint[1];
@@ -115,23 +115,23 @@ class Cube
         }
     }
 
-    public void RotateY(float angle)
+    public void RotateY(double angle)
     {
-        float cosA = (float)Math.Cos(angle);
-        float sinA = (float)Math.Sin(angle);
+        double cosA = (double)Math.Cos(angle);
+        double sinA = (double)Math.Sin(angle);
 
         for (int i = 0; i < Points.Length; i++)
         {
-            float x = Points[i][0];
-            float z = Points[i][2];
+            double x = Points[i][0];
+            double z = Points[i][2];
 
             // Verschiebe den Punkt relativ zum Mittelpunkt
             x -= MiddlePoint[0];
             z -= MiddlePoint[2];
 
             // Rotieren um die Y-Achse
-            float newX = x * cosA + z * sinA;
-            float newZ = -x * sinA + z * cosA;
+            double newX = x * cosA + z * sinA;
+            double newZ = -x * sinA + z * cosA;
 
             // Verschiebe den Punkt zurück zum ursprünglichen Mittelpunkt
             Points[i][0] = newX + MiddlePoint[0];
@@ -139,23 +139,23 @@ class Cube
         }
     }
 
-    public void RotateZ(float angle)
+    public void RotateZ(double angle)
     {
-        float cosA = (float)Math.Cos(angle);
-        float sinA = (float)Math.Sin(angle);
+        double cosA = (double)Math.Cos(angle);
+        double sinA = (double)Math.Sin(angle);
 
         for (int i = 0; i < Points.Length; i++)
         {
-            float x = Points[i][0];
-            float y = Points[i][1];
+            double x = Points[i][0];
+            double y = Points[i][1];
 
             // Verschiebe den Punkt relativ zum Mittelpunkt
             x -= MiddlePoint[0];
             y -= MiddlePoint[1];
 
             // Rotieren um die Z-Achse
-            float newX = x * cosA - y * sinA;
-            float newY = x * sinA + y * cosA;
+            double newX = x * cosA - y * sinA;
+            double newY = x * sinA + y * cosA;
 
             // Verschiebe den Punkt zurück zum ursprünglichen Mittelpunkt
             Points[i][0] = newX + MiddlePoint[0];

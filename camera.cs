@@ -1,14 +1,14 @@
 namespace game3D;
 
 class Camera{
-    public float[] cameraPos = [0, 0, -100];
-    public float[] cameraForward = [0, 0, -1, 1];
-    public float[] cameraUp = [0, 1, 0, 1];
-    public float[] cameraRight = [1, 0, 0, 1];
-    public float farPlane = 100;
-    public float nearPlane = 1f;
-    public float fov = (float)(Math.PI / 3);
-    public float moveSpeed = 3;
+    public double[] cameraPos = [0, 0, -100];
+    public double[] cameraForward = [0, 0, -1, 1];
+    public double[] cameraUp = [0, 1, 0, 1];
+    public double[] cameraRight = [1, 0, 0, 1];
+    public double farPlane = 100;
+    public double nearPlane = 1f;
+    public double fov = (double)(Math.PI / 3);
+    public double moveSpeed = 3;
 
     public void moveRightRelative(bool opposite)
     {
@@ -30,7 +30,7 @@ class Camera{
         cameraPos = Util.AddArrays(cameraPos, Util.MultiplyArrayWithScalar([0, 1, 0], (opposite ? -1 : 1) * moveSpeed));
     }
 
-    public void RotateCamera(float pitchAngle, float yawAngle, float rollAngle)
+    public void RotateCamera(double pitchAngle, double yawAngle, double rollAngle)
     {
         //yaw : left/right
         cameraForward = Util.RotateAroundAxis(cameraForward, [0, 1, 0], yawAngle); // Rotate forward around the up axis

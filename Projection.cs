@@ -2,46 +2,47 @@ namespace game3D;
 
 class Projection
 {
-    public static PointF?[] ProjectCube(float[][] points, Camera cam, int screenWidth, int screenHeight)
+    public static (PointF?[], double[]) ProjectCube(double[][] points, Camera cam, int screenWidth, int screenHeight)
     {
+        double[] zValues = new double[points.Length];
         PointF?[] projectedPoints = new PointF?[points.Length];
 
         for (int i = 0; i < points.Length; i++)
         {
-            projectedPoints[i] = ProjectPoint(points[i], cam, screenWidth, screenHeight);
+            (projectedPoints[i], zValues[i]) = ProjectPoint(points[i], cam, screenWidth, screenHeight);
         }
 
-        return projectedPoints;
+        return (projectedPoints, zValues);
     }
 
-    private static PointF? ProjectPoint(float[] point, Camera cam, int screenWidth, int screenHeight)
+    private static (PointF?,double) ProjectPoint(double[] point, Camera cam, int screenWidth, int screenHeight)
     {
-        float[] point4 = [.. point, 1.0f];
-        float[,] viewMatrix = ComputeViewMatrix(cam);
-        float[,] projectionMatrix = ComputeProjectionMatrix(cam, screenWidth, screenHeight);
-        float[] cameraSpacePoint = Util.MultiplyMatrixAndVector(viewMatrix, point4);
+        double[] point4 = [.. point, 1.0f];
+        double[,] viewMatrix = ComputeViewMatrix(cam);
+        double[,] projectionMatrix = ComputeProjectionMatrix(cam, screenWidth, screenHeight);
+        double[] cameraSpacePoint = Util.MultiplyMatrixAndVector(viewMatrix, point4);
 
         if (cameraSpacePoint[2] <= 0)
-            return null;
-        float[] clipSpacePoint = Util.MultiplyMatrixAndVector(projectionMatrix, cameraSpacePoint);
+            return (null, 0);
+        double[] clipSpacePoint = Util.MultiplyMatrixAndVector(projectionMatrix, cameraSpacePoint);
 
-        float w = clipSpacePoint[3];
-        float[] ndcPoint =
+        double w = clipSpacePoint[3];
+        double[] ndcPoint =
         [
             clipSpacePoint[0] / w,
                 clipSpacePoint[1] / w,
                 clipSpacePoint[2] / w
         ];
 
-        return new PointF(
-            (ndcPoint[0] + 1) * 0.5f * screenWidth,
-            (ndcPoint[1] + 1) * 0.5f * screenHeight
-            );
+        return (new PointF(
+            (float)((ndcPoint[0] + 1) * 0.5f * screenWidth),
+            (float)((ndcPoint[1] + 1) * 0.5f * screenHeight)
+            ),ndcPoint[2]);
     }
 
-    private static float[,] ComputeViewMatrix(Camera cam)
+    private static double[,] ComputeViewMatrix(Camera cam)
     {
-        float[,] viewMatrix = new float[4, 4];
+        double[,] viewMatrix = new double[4, 4];
         viewMatrix[0, 0] = cam.cameraRight[0];
         viewMatrix[0, 1] = cam.cameraRight[1];
         viewMatrix[0, 2] = cam.cameraRight[2];
@@ -58,11 +59,11 @@ class Projection
         return viewMatrix;
     }
 
-    private static float[,] ComputeProjectionMatrix(Camera cam, int screenWidth, int screenHeight)
+    private static double[,] ComputeProjectionMatrix(Camera cam, int screenWidth, int screenHeight)
     {
-        float aspectRatio = screenWidth / (float)screenHeight;
-        float[,] projectionMatrix = new float[4, 4];
-        float tanHalfFov = (float)Math.Tan(cam.fov / 2);
+        double aspectRatio = screenWidth / (double)screenHeight;
+        double[,] projectionMatrix = new double[4, 4];
+        double tanHalfFov = (double)Math.Tan(cam.fov / 2);
         projectionMatrix[0, 0] = 1 / (aspectRatio * tanHalfFov);
         projectionMatrix[1, 1] = 1 / tanHalfFov;
         projectionMatrix[2, 2] = -(cam.farPlane + cam.nearPlane) / (cam.farPlane - cam.nearPlane);
