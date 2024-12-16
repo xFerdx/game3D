@@ -15,7 +15,7 @@ class Projection
         return (projectedPoints, zValues);
     }
 
-    private static (PointF?,double) ProjectPoint(double[] point, Camera cam, int screenWidth, int screenHeight)
+    private static (PointF?, double) ProjectPoint(double[] point, Camera cam, int screenWidth, int screenHeight)
     {
         double[] point4 = [.. point, 1.0f];
         double[,] viewMatrix = ComputeViewMatrix(cam);
@@ -43,9 +43,9 @@ class Projection
     private static double[,] ComputeViewMatrix(Camera cam)
     {
         double[,] viewMatrix = new double[4, 4];
-        viewMatrix[0, 0] = cam.cameraRight[0];
         viewMatrix[0, 1] = cam.cameraRight[1];
         viewMatrix[0, 2] = cam.cameraRight[2];
+        viewMatrix[0, 0] = cam.cameraRight[0];
         viewMatrix[1, 0] = cam.cameraUp[0];
         viewMatrix[1, 1] = cam.cameraUp[1];
         viewMatrix[1, 2] = cam.cameraUp[2];

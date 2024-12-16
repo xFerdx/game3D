@@ -1,9 +1,11 @@
 using System.Data;
+using System.Numerics;
 
 namespace game3D;
 
 public partial class Form1 : Form
 {
+    Random random = new Random();
     [System.Runtime.InteropServices.DllImport("kernel32.dll")]
     public static extern bool AllocConsole();
     private List<Cube> cubes;
@@ -21,6 +23,7 @@ public partial class Form1 : Form
     private double mouseSensitivity = 0.001f;
 
     private bool noCursor = false;
+    List<(int cubeIndex, int faceIndex, double zValue)> visibleFaces;
 
     public Form1()
     {
@@ -35,14 +38,14 @@ public partial class Form1 : Form
 
         cubes = new List<Cube>
         {
-            
-            //new([10, 30, 0], 10),
+
+            //new([0, 0, 0], 10),
         };
 
         for (int i = 0; i < 20; i++)
             for (int j = 0; j < 20; j++)
-                for (int k = 0; k < 20; k++)
-                    cubes.Add(new Cube([i * 10, -10 * k, j * 10], 10));
+                for (int k = 0; k < 20; k++) 
+        cubes.Add(new Cube([i * 10, -10 * k, j * 10], 10));
         timer = new System.Windows.Forms.Timer();
         timer.Interval = 1;
         timer.Tick += Timer_Tick;
@@ -70,6 +73,15 @@ public partial class Form1 : Form
             counter = 0;
             elapsedTime = 0;
         }
+
+
+        // foreach(Cube c in cubes)
+        // {
+        //     c.RotateX(random.NextDouble()/2-0.5);
+        //     c.RotateY(random.NextDouble()/2-0.5);
+        //     c.RotateZ(random.NextDouble()/2-0.5);
+        // }
+
     }
 
     protected override void OnLoad(EventArgs e)
@@ -87,7 +99,7 @@ public partial class Form1 : Form
         g.Clear(Color.White);
 
 
-        List<(int cubeIndex, int faceIndex, double zValue)> visibleFaces = new();
+        visibleFaces = new();
 
         double[][] zValues = new double[cubes.Count][];
         PointF?[][] points = new PointF?[cubes.Count][];
@@ -96,7 +108,7 @@ public partial class Form1 : Form
         {
             (points[i], zValues[i]) = Projection.ProjectCube(cubes[i].Points, cam, this.ClientSize.Width, this.ClientSize.Height);
         }
-
+        
         for (int i = 0; i < cubes.Count; i++)
         {
             for (int j = 0; j < 6; j++)
@@ -111,34 +123,10 @@ public partial class Form1 : Form
             }
         }
 
-        
-
         visibleFaces.Sort((a, b) => a.zValue.CompareTo(b.zValue));
 
-        if(count % 100 == 0)
-        {
-            Console.WriteLine();
-            //foreach ((int _, int _, double z) in visibleFaces)
-            //{
-            //    Console.WriteLine(z);
-            //}
-            Console.WriteLine(visibleFaces.Count);
-        }
-
-
-        visibleFaces = visibleFaces.GroupBy(f => f.zValue).Where(g => g.Count() == 1).Select(g => g.First()).ToList();
-        
-        if(count % 100 == 0)
-        {
-            Console.WriteLine();
-            //foreach ((int _, int _, double z) in visibleFaces)
-            //{
-            //    Console.WriteLine(z);
-            //}
-            Console.WriteLine(visibleFaces.Count);
-
-        }
-
+        double tol = 1e11;
+        visibleFaces = visibleFaces.GroupBy(f => Math.Round(f.zValue * tol) / tol).Where(g => g.Count() == 1).Select(g => g.First()).ToList();
 
         foreach ((int cubeIndex, int faceIndex, double zValue) in visibleFaces)
         {
@@ -320,6 +308,47 @@ public partial class Form1 : Form
         refreshTimer.Start();
     }
 
+    private int calculateNearestFaceIntersectIdx()
+    {
+        double shortestDist = double.MaxValue;
+        int idx = -1;
+
+        int i = 0;
+        foreach ((int cubeIndex, int faceIndex, double zValue) in visibleFaces)
+        {
+            double[] p1 = cubes[cubeIndex].Points[cubes[cubeIndex].Faces[faceIndex][0]];
+            Vector3 v1 = new Vector3((float)p1[0], (float)p1[1], (float)p1[2]);
+            double[] p2 = cubes[cubeIndex].Points[cubes[cubeIndex].Faces[faceIndex][1]];
+            Vector3 v2 = new Vector3((float)p2[0], (float)p2[1], (float)p2[2]);
+            double[] p3 = cubes[cubeIndex].Points[cubes[cubeIndex].Faces[faceIndex][2]];
+            Vector3 v3 = new Vector3((float)p3[0], (float)p3[1], (float)p3[2]);
+            double[] p4 = cubes[cubeIndex].Points[cubes[cubeIndex].Faces[faceIndex][3]];
+            Vector3 v4 = new Vector3((float)p4[0], (float)p4[1], (float)p4[2]);
+            Vector3 startPos = new Vector3((float)cam.cameraPos[0], (float)cam.cameraPos[1], (float)cam.cameraPos[2]);
+            Vector3 dir = new Vector3((float)-cam.cameraForward[0], (float)-cam.cameraForward[1], (float)-cam.cameraForward[2]);
+            (bool valid, double dist, Vector3 point) = Util.RayIntersectsSquare(startPos, dir, v1, v2, v3, v4);
+            if (valid && dist > 0)
+            {
+                if (dist < shortestDist)
+                {
+                    shortestDist = dist;
+                    idx = i;
+                }
+            }
+            if (valid)
+            {
+                Console.WriteLine();
+                Console.WriteLine(dist);
+            }
+
+            i++;
+        }
+
+        return idx;
+
+    }
+
+
     protected override void OnKeyDown(KeyEventArgs e)
     {
         base.OnKeyDown(e);
@@ -420,6 +449,53 @@ public partial class Form1 : Form
             double pitch = deltaY * mouseSensitivity;
             cam.RotateCamera(pitch, yaw, 0);
             CenterMouse();
+        }
+    }
+
+
+    protected override void OnMouseDown(MouseEventArgs e)
+    {
+        base.OnMouseClick(e);
+
+        if (e.Button == MouseButtons.Left)
+        {
+            Console.WriteLine("Left clicked");
+            int idx = calculateNearestFaceIntersectIdx();
+            if(idx < 0 ||idx > visibleFaces.Count-1)
+                return;
+            cubes.RemoveAt(visibleFaces[idx].cubeIndex);
+        }
+        else if (e.Button == MouseButtons.Right)
+        {
+            Console.WriteLine("Right clicked");
+
+            int idx = calculateNearestFaceIntersectIdx();
+
+            if (idx == -1)
+                return;
+
+
+            Cube cube = cubes[visibleFaces[idx].cubeIndex];
+            int[] face = cube.Faces[visibleFaces[idx].faceIndex];
+            double[] middlePointCube = cube.MiddlePoint;
+            double[] pointFace1 = cube.Points[face[0]];
+            double[] pointFace2 = cube.Points[face[2]];
+            double[] middlePointFace = new double[3];
+            double[] newPoint = new double[3];
+            for (int j = 0; j < middlePointFace.Length; j++)
+            {
+                middlePointFace[j] = (pointFace1[j] + pointFace2[j]) / 2;
+                newPoint[j] = middlePointFace[j] * 2 - middlePointCube[j];
+            }
+
+            cubes.Add(new Cube(newPoint, 10));
+
+
+
+        }
+        else if (e.Button == MouseButtons.Middle)
+        {
+
         }
     }
 

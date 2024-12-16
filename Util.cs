@@ -1,4 +1,5 @@
 namespace game3D;
+using System.Numerics;
 
 class Util
 {
@@ -80,5 +81,79 @@ class Util
         if (length == 0)
             throw new ArgumentException("The vector has zero length and cannot be normalized.");
         return vector.Select(v => v / length).ToArray();
+    }
+
+
+    static public (bool, double, Vector3) RayIntersectsSquare(Vector3 rayOrigin, Vector3 rayDirection, Vector3 v0, Vector3 v1, Vector3 v2, Vector3 v3)
+    {
+        // Test the first triangle: (v0, v1, v2)
+        var result1 = RayIntersectsTriangle(rayOrigin, rayDirection, v0, v1, v2);
+        if (result1.Item1)
+        {
+            return result1; // Intersection found in the first triangle
+        }
+
+        // Test the second triangle: (v0, v2, v3)
+        var result2 = RayIntersectsTriangle(rayOrigin, rayDirection, v0, v2, v3);
+        if (result2.Item1)
+        {
+            return result2; // Intersection found in the second triangle
+        }
+
+        // No intersection with either triangle
+        return (false, 0, Vector3.Zero);
+    }
+
+    static public (bool, double, Vector3) RayIntersectsTriangle(Vector3 rayOrigin, Vector3 rayDirection, Vector3 v0, Vector3 v1, Vector3 v2)
+    {
+        Vector3 intersectionPoint = Vector3.Zero;
+
+        // Edge vectors of the triangle
+        Vector3 edge1 = v1 - v0;
+        Vector3 edge2 = v2 - v0;
+
+        // Compute the determinant
+        Vector3 h = Vector3.Cross(rayDirection, edge2);
+        float a = Vector3.Dot(edge1, h);
+
+        // If the determinant is near zero, the ray is parallel to the triangle plane
+        if (Math.Abs(a) < 1e-6)
+        {
+            return (false, 0, intersectionPoint);
+        }
+
+        float f = 1.0f / a;
+        Vector3 s = rayOrigin - v0;
+        float u = f * Vector3.Dot(s, h);
+
+        // Check if the intersection lies outside the triangle
+        if (u < 0.0f || u > 1.0f)
+        {
+            return (false, 0, intersectionPoint);
+        }
+
+        Vector3 q = Vector3.Cross(s, edge1);
+        float v = f * Vector3.Dot(rayDirection, q);
+
+        // Check if the intersection lies outside the triangle
+        if (v < 0.0f || u + v > 1.0f)
+        {
+            return (false, 0, intersectionPoint);
+        }
+
+        // Compute the distance along the ray to the intersection point
+        float t = f * Vector3.Dot(edge2, q);
+
+        // Calculate the intersection point
+        intersectionPoint = rayOrigin + t * rayDirection;
+
+        return (true, t, intersectionPoint);
+    }
+
+    public static string ArrayToString<T>(T[] array)
+    {
+        if (array == null || array.Length == 0)
+            return "[]";
+        return "[" + string.Join(", ", array) + "]";
     }
 }
